@@ -19,6 +19,28 @@
         dest: ~/.oh-my-zsh
       when: not stat_oh_my_zsh.stat.exists
 
+    - name: Check if zsh-autosuggestions is installed
+      stat:
+        path: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+      register: stat_zsh_autosuggestions
+
+    - name: Install zsh-autosuggestions
+      git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+      when: not stat_zsh_autosuggestions.stat.exists
+
+    - name: Check if zsh-syntax-highlighting is installed
+      stat:
+        path: ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+      register: stat_zsh_syntax_highlighting
+
+    - name: Install zsh-syntax-highlighting
+      git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        dest: ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+      when: not stat_zsh_syntax_highlighting.stat.exists
+
     - name: Check if ~/.zshrc exists
       stat:
         path: ~/.zshrc
@@ -43,7 +65,7 @@
       when: not stat_p10k_theme.stat.exists
 
     - name: Change shell to zsh
+      become: true
       user:
         name: "{{ ansible_user_id }}"
         shell: /bin/zsh
-      become: true
