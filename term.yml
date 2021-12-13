@@ -1,0 +1,37 @@
+---
+- hosts: all
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - alacritty
+          - git-delta
+          - tig
+          - tmux
+        state: latest
+
+    - name: Create local fonts directory
+      file:
+        path: ~/.local/share/fonts
+        state: directory
+        mode: 0755
+
+    - name: Check if we have VictorMono Fonts
+      stat:
+        path: ~/.local/share/fonts/Victor Mono Regular Nerd Font Complete.ttf
+      register: stat_fonts_victor_mono
+
+    - name: Install VictorMono Nerd Fonts
+      when: not stat_fonts_victor_mono.stat.exists
+      block:
+        - name: Download VictorMono Nerd Font
+          get_url:
+            url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/VictorMono.zip
+            dest: /tmp/VictorMono.zip
+
+        - name: Install VictorMono Nerd Font
+          unarchive:
+            src: /tmp/VictorMono.zip
+            dest: ~/.local/share/fonts/
+            remote_src: yes

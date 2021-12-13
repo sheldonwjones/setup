@@ -1,0 +1,51 @@
+---
+- hosts: all
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - git
+        state: latest
+
+    - name: Install yadm -- Debian distros
+      when: ansible_os_family == 'Debian'
+      become: true
+      package:
+        name: yadm
+        state: latest
+
+    - name: Install yadm on RedHat distros
+      when: ansible_os_family == 'RedHat'
+      block:
+        - name: Clone yadm repo -- RedHat distros
+          git:
+            repo: https://github.com/TheLocehiliosan/yadm.git
+            dest: ~/.yadm-project
+
+        - name: Create ~/bin if it doesn't exist -- RedHat distros
+          file:
+            path: ~/bin
+            mode: 0755
+            state: directory
+
+        - name: Create symlink for yadm to ~/bin/yadm -- RedHat distros
+          file:
+            src: ~/.yadm-project/yadm
+            dest: ~/bin/yadm
+            state: link
+
+    - name: Check if YADM clone has been called
+      stat:
+        path: ~/.local/share/yadm/repo.git
+      register: stat_yadm_repo
+
+    - name: Fetch configs using yadm clone
+      shell: "~/bin/yadm clone {{ yadm_origin_url | default('https://github.com/sheldonwjones/dotfiles.git') }}"
+      when: not stat_yadm_repo.stat.exists
+
+    - name: Pull changes using yadm pull
+      shell: "~/bin/yadm pull"
+      when: stat_yadm_repo.stat.exists
+      changed_when: shell_yadm_pull.stdout != 'Already up to date.'
+      register: shell_yadm_pull

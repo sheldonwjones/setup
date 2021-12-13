@@ -1,0 +1,60 @@
+---
+- hosts: all
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - bat
+          - fd-find
+          - fzf
+          - neovim
+          - python3-neovim
+          - ripgrep
+          - ansible
+          - ansible-lint
+        state: latest
+
+    - name: Create VIM backup directory
+      file:
+        path: ~/.local/share/nvim/backup
+        state: directory
+        mode: 0755
+
+    - name: Check if nvm is installed
+      stat:
+        path: ~/.nvm
+      register: stat_nvm
+
+    - name: Install nvm
+      shell: >
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+      args:
+        creates: ~/.nvm/nvm.sh
+        executable: /bin/bash
+        warn: false
+      when: not stat_nvm.stat.exists
+
+    - name: Check if we have node installed
+      stat:
+        path: ~/.nvm/versions/node
+      register: stat_nvm_versions_node
+
+    - name: Install Node.js
+      shell: '. ~/.nvm/nvm.sh && nvm install --lts'
+      args:
+        creates: ~/.nvm/versions/node
+        executable: /bin/bash
+        warn: no
+      when: not stat_nvm_versions_node.stat.exists
+
+    - name: Check if vim plugins have been installed
+      stat:
+        path: ~/.config/nvim/plugged
+      register: stat_nvim_plugged
+
+    - name: Bootstrap Vim
+      shell: nvim '+PlugUpdate' '+PlugClean!' '+PlugUpdate' '+qall'
+      args:
+        executable: /bin/bash
+      when: not stat_nvim_plugged.stat.exists

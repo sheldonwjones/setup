@@ -1,0 +1,49 @@
+---
+- hosts: all
+  tasks:
+    - name: Install packages
+      become: true
+      package:
+        name:
+          - zsh
+        state: latest
+
+    - name: Check if oh-my-zsh is installed
+      stat:
+        path: ~/.oh-my-zsh
+      register: stat_oh_my_zsh
+
+    - name: Install oh-my-zsh
+      git:
+        repo: https://github.com/robbyrussell/oh-my-zsh
+        dest: ~/.oh-my-zsh
+      when: not stat_oh_my_zsh.stat.exists
+
+    - name: Check if ~/.zshrc exists
+      stat:
+        path: ~/.zshrc
+      register: stat_zshrc
+
+    - name: Create ~/.zshrc
+      copy:
+        src: ~/.oh-my-zsh/templates/zshrc.zsh-template
+        dest: ~/.zshrc
+      when: not stat_zshrc.stat.exists
+
+    - name: Check if p10k theme is installed
+      stat:
+        path: ~/.oh-my-zsh/custom/themes/powerlevel10k
+      register: stat_p10k_theme
+
+    - name: Install the oh-my-zsh p10k theme
+      git:
+        depth: 1
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: ~/.oh-my-zsh/custom/themes/powerlevel10k
+      when: not stat_p10k_theme.stat.exists
+
+    - name: Change shell to zsh
+      user:
+        name: "{{ ansible_user_id }}"
+        shell: /bin/zsh
+      become: true
